@@ -1,5 +1,5 @@
 import api from "./api";
-import { ADD_EXPENSE, GET_EXPENSE_BY_USER } from "./api";
+import { ADD_EXPENSE, GET_EXPENSE_BY_USER,GET_TOTAL_EXPENSE } from "./api";
 
 const addExpense = async (expenseData) => {
     try {
@@ -17,6 +17,13 @@ const getExpensesByUser = async () => {
         throw new Error(error.response.data.message || "Failed to fetch expenses");
     }
 }
-
-export { addExpense, getExpensesByUser };
+const getTotalExpense = async () => {
+    try {
+        const response = await api.get(GET_TOTAL_EXPENSE);
+        return response.data;
+    } catch (error) {
+        throw new Error(error.response.data.message || "Failed to fetch total expense");
+    }
+}
+export { addExpense, getExpensesByUser,getTotalExpense };
 

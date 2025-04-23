@@ -40,11 +40,13 @@
 //   // );
 // }
 import { View, StyleSheet } from 'react-native';
-import { Slot, useRouter, usePathname } from 'expo-router';
+import { Slot, useRouter, usePathname, Stack } from 'expo-router';
 import { useEffect,useState } from 'react';
 import { AuthProvider, useAuth } from '../context/auth';
 import { ToastProvider } from '../context/toastcontext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ExpenseProvider } from '@/context/expensecontext';
+import { BudgetProvider } from '@/context/budgetcontext';
 
 
 function LayoutWithAuthLogic() {
@@ -53,7 +55,7 @@ function LayoutWithAuthLogic() {
   const pathname = usePathname();
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const checkAccess = async () => {
       await AsyncStorage.removeItem('token');
       const token = await AsyncStorage.getItem('user_token');
       // console.log('token:', token);
@@ -64,7 +66,7 @@ function LayoutWithAuthLogic() {
       }
     };
   
-    checkAuth();
+    checkAccess();
   }, [isAuthenticated, pathname, router]);
 
   return(
@@ -84,9 +86,13 @@ const styles = StyleSheet.create({
 export default function RootLayout() {
   return (
     <ToastProvider>
+      <BudgetProvider>
+      <ExpenseProvider>
       <AuthProvider>
         <LayoutWithAuthLogic />
       </AuthProvider>
+    </ExpenseProvider>
+    </BudgetProvider>
     </ToastProvider>
   );
 }

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { addExpense } from '../services/expenseService';
+import { useExpenseContext } from '@/context/expensecontext';
 import {
     Modal,
     View,
@@ -22,6 +23,7 @@ type Props = {
 };
 
 const addExpenseForm: React.FC<Props> = ({ visible, onClose, onSuccess }) => {
+    const { triggerRefresh } = useExpenseContext();
 
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -66,6 +68,7 @@ const addExpenseForm: React.FC<Props> = ({ visible, onClose, onSuccess }) => {
                 Alert.alert('💖 Item Saved!', `"${title}" has been added!`);
                 onSuccess(); // Call the success function to refresh the list or perform any other action
                 onClose(); // Close the modal after successful submission
+                triggerRefresh(); // Trigger refresh in the context
                 // Optionally clear the form
                 setTitle('');
                 setDescription('');
@@ -155,7 +158,7 @@ const addExpenseForm: React.FC<Props> = ({ visible, onClose, onSuccess }) => {
                         <Text style={styles.label}>Type</Text>
                         <View style={styles.toggleRow}>
                             <Text style={[styles.typeLabel]}>
-                                {isExpense ? 'Income' : 'Expense'}
+                                {isExpense ? 'Expense' : 'Income'}
                             </Text>
                             <Switch
                                 value={isExpense}

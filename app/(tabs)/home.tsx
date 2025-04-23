@@ -11,8 +11,10 @@ import {
     Easing,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import axios from 'axios';
 import { getExpensesByUser } from '@/services/expenseService';
+import { getProfile } from '@/services/authService';
+import { useBudgetContext } from '@/context/budgetcontext';
+import BudgetModal from '@/components/budgetModal';
 import ExpenseProgressBar from '@/components/expenseProgressBar';
 
 
@@ -25,11 +27,21 @@ interface Card {
     date: string;
     amount: number;
 }
+type UserInfo = {
+    name: string;
+};
+
 
 const CuteCards = () => {
+    const { budget, fetchBudget, hasBudget } = useBudgetContext();
+    const [showBudgetModal, setShowBudgetModal] = useState(false);
     const [cards, setCards] = useState<Card[]>([]);
     const [loading, setLoading] = useState(true);
     const [modalVisible, setModalVisible] = useState(false);
+    const [userInfo, setUserInfo] = useState<UserInfo>({
+        name: '',
+    });
+    const [error, setError] = useState<string | null>(null);
 
     // const handleAddCard = () => {
     //     Alert.alert('💖 Adding a new cute item!', 'Functionality TBD');
@@ -42,6 +54,35 @@ const CuteCards = () => {
     //     setCards([...cards, newCard]);
     // };
 
+    useEffect(() => {
+        const fetchUserInfo = async () => {
+            try {
+                const res = await getProfile();
+                // console.log(`Response`, res);
+                const name = res.name;
+                if (!name) {
+                    throw new Error("User name not found in response");
+                }
+                setUserInfo({ name });
+            } catch (error) {
+                setError(`Error fetching user: ${(error as Error).message}`);
+            }
+        };
+
+        fetchUserInfo();
+    }, []);
+
+    useEffect(() => {
+        if (!budget) {
+            setShowBudgetModal(true);
+        }
+    }
+        , [budget]);
+
+    const handleModalSuccess = async () => {
+        await fetchBudget();
+        setShowBudgetModal(false);
+    };
     const getCategoryIcon = (category: string) => {
         switch (category) {
             case 'Food':
@@ -85,11 +126,30 @@ const CuteCards = () => {
             <ScrollView contentContainerStyle={styles.scroll}>
                 <View style={styles.header}>
                     <Text style={styles.headerText}>
-                        My Cute Collection <Text style={styles.headerIcon}>🎀</Text>
+                        Hello, {userInfo.name} <Text style={styles.headerIcon}>🎀</Text>
                     </Text>
+                    <Text style={styles.subheaderText}>Here's your spending summary:</Text>
                 </View>
 
-                    <ExpenseProgressBar current={250} goal={500} />
+                {/* ✅ Show progress bar only if a budget exists */}
+                {hasBudget && (
+                    <ExpenseProgressBar onEditBudget={() => setShowBudgetModal(true)} />
+                )}
+
+                {/* ✅ Show budget action button
+                <TouchableOpacity onPress={() => setShowBudgetModal(true)} style={{ marginTop: 20 }}>
+                    <Text style={{ fontSize: 16 }}>
+                        {hasBudget ? 'Edit Budget ✏️' : 'Set Budget 💰'}
+                    </Text>
+                </TouchableOpacity> */}
+
+                {/* ✅ Show modal for creating or editing the budget */}
+                <BudgetModal
+                    visible={showBudgetModal}
+                    onClose={() => setShowBudgetModal(false)}
+                    onSuccess={handleModalSuccess}
+                    isEditing={hasBudget} // 👈 Pass editing flag dynamically
+                />
 
                 <View style={styles.cardGrid}>
                     {loading ? (
@@ -180,6 +240,14 @@ const styles = StyleSheet.create({
         textShadowColor: 'rgba(0, 0, 0, 0.1)',
         textShadowOffset: { width: 1, height: 1 },
         textShadowRadius: 3,
+    },
+    subheaderText: {
+        fontSize: 16,
+        color: '#ad1457',
+        textShadowColor: 'rgba(0, 0, 0, 0.1)',
+        textShadowOffset: { width: 1, height: 1 },
+        textShadowRadius: 3,
+        marginTop: 5,
     },
     headerIcon: {
         fontSize: 26,

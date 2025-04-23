@@ -24,7 +24,7 @@ export default function HomeScreen() {
       }
       setUserInfo({name});
       } catch (error) {
-        setError(`Error fetching courses: ${(error as Error).message}`);
+        setError(`Error fetching user: ${(error as Error).message}`);
       }
     };
 
