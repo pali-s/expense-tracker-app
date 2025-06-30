@@ -197,7 +197,7 @@ const CuteCards = () => {
                         cards.map((card: Card) => (
                             <Animated.View key={card.id} style={[styles.card, { opacity: 1, transform: [{ scale: 1 }] }]}>
                                 <View style={styles.cardContent}>
-                                    <View style={styles.cardIcon}>{card.icon}</View>
+                                    <Text style={styles.cardIcon}>{card.icon}</Text>
 
                                     <View style={styles.cardTextSection}>
                                         <View style={styles.cardTitleRow}>
