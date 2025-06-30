@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { router } from 'expo-router';
 import AddExpenseForm from '@/components/addExpense';
 import {
     View,
@@ -11,9 +12,10 @@ import {
     Easing,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { getExpensesByUser } from '@/services/expenseService';
+import { getExpensesByUser, deleteExpense } from '@/services/expenseService';
 import { getProfile } from '@/services/authService';
 import { useBudgetContext } from '@/context/budgetcontext';
+import { useExpenseContext } from '@/context/expensecontext';
 import BudgetModal from '@/components/budgetModal';
 import ExpenseProgressBar from '@/components/expenseProgressBar';
 
@@ -33,7 +35,8 @@ type UserInfo = {
 
 
 const CuteCards = () => {
-    const { budget, fetchBudget, hasBudget } = useBudgetContext();
+    const { triggerRefresh } = useExpenseContext();
+    const { budget, fetchBudget, hasBudget, budgetExpired } = useBudgetContext();
     const [showBudgetModal, setShowBudgetModal] = useState(false);
     const [cards, setCards] = useState<Card[]>([]);
     const [loading, setLoading] = useState(true);
@@ -73,15 +76,28 @@ const CuteCards = () => {
     }, []);
 
     useEffect(() => {
-        if (!budget) {
+        if (!budget || budgetExpired) {
             setShowBudgetModal(true);
         }
     }
-        , [budget]);
+        , [budget, budgetExpired]);
 
     const handleModalSuccess = async () => {
+        const wasExpired = budgetExpired; // cache before refresh
+
         await fetchBudget();
         setShowBudgetModal(false);
+
+        if (wasExpired) {
+            Alert.alert(
+                "View Budget Analysis?",
+                "Your previous budget period has ended. Would you like to review your spending?",
+                [
+                    { text: "Not now", style: "cancel" },
+                    { text: "View Analysis", onPress: () => router.push('/analysis') },
+                ]
+            );
+        }
     };
     const getCategoryIcon = (category: string) => {
         switch (category) {
@@ -117,6 +133,24 @@ const CuteCards = () => {
         }
     };
 
+    const deleteCard = async (id: any) => {
+        try {
+            const response = await deleteExpense(id);
+            if (response.message === "Expense deleted successfully") {
+                // Optionally show success feedback
+                console.log('Card deleted successfully');
+                setCards(prevCards => prevCards.filter(card => card.id !== id));
+                await fetchBudget();
+                triggerRefresh(); // Trigger refresh in context
+            } else {
+                console.error('Failed to delete card');
+                // Optionally handle error state
+            }
+        } catch (error) {
+            console.error('Error deleting card:', error);
+        }
+    };
+
     useEffect(() => {
         fetchCards();
     }, []);
@@ -132,8 +166,12 @@ const CuteCards = () => {
                 </View>
 
                 {/* ✅ Show progress bar only if a budget exists */}
-                {hasBudget && (
+                {budget ? (
                     <ExpenseProgressBar onEditBudget={() => setShowBudgetModal(true)} />
+                ) : (
+                    <View style={{ padding: 20 }}>
+                        <Text style={{ color: '#aaa' }}>Loading budget progress...</Text>
+                    </View>
                 )}
 
                 {/* ✅ Show budget action button
@@ -149,6 +187,7 @@ const CuteCards = () => {
                     onClose={() => setShowBudgetModal(false)}
                     onSuccess={handleModalSuccess}
                     isEditing={hasBudget} // 👈 Pass editing flag dynamically
+                    budgetExpired={budgetExpired}
                 />
 
                 <View style={styles.cardGrid}>
@@ -158,10 +197,17 @@ const CuteCards = () => {
                         cards.map((card: Card) => (
                             <Animated.View key={card.id} style={[styles.card, { opacity: 1, transform: [{ scale: 1 }] }]}>
                                 <View style={styles.cardContent}>
-                                    <Text style={styles.cardIcon}>{card.icon}</Text>
+                                    <View style={styles.cardIcon}>{card.icon}</View>
 
                                     <View style={styles.cardTextSection}>
-                                        <Text style={styles.cardTitle}>{card.title}</Text>
+                                        <View style={styles.cardTitleRow}>
+                                            <Text style={styles.cardTitle}>{card.title}</Text>
+
+                                            <TouchableOpacity onPress={() => deleteCard(card.id)}>
+                                                <Text style={styles.deleteIcon}>🗑️</Text>
+                                            </TouchableOpacity>
+                                        </View>
+
 
                                         <View style={styles.cardMetaRow}>
                                             <Text style={styles.cardDate}>{card.date}</Text>
@@ -189,6 +235,14 @@ const CuteCards = () => {
 export default CuteCards;
 
 const styles = StyleSheet.create({
+    cardTitleRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    deleteIcon: {
+        marginLeft: 10,
+    },
     cardMetaRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',

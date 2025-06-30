@@ -8,9 +8,10 @@ type Props = {
     onClose: () => void;
     onSuccess: () => void;
     isEditing?: boolean;
+    budgetExpired?: boolean;
 };
 
-const BudgetModal: React.FC<Props> = ({ visible, onClose, onSuccess, isEditing = false }) => {
+const BudgetModal: React.FC<Props> = ({ visible, onClose, onSuccess, isEditing = false, budgetExpired = false }) => {
     const { budget, hasBudget, createBudget, updateBudget } = useBudgetContext();
     const [amount, setAmount] = useState('');
     const [duration, setDuration] = useState('1 week');
@@ -24,7 +25,7 @@ const BudgetModal: React.FC<Props> = ({ visible, onClose, onSuccess, isEditing =
         }
 
         try {
-            if (isEditing==true&&hasBudget) {
+            if (isEditing == true && hasBudget) {
                 // console.log('Editing budget:', budget?.amount);
                 await updateBudget({ amount: parseFloat(amount), duration, startDate });
                 Alert.alert('Success', 'Budget updated successfully');
@@ -33,15 +34,15 @@ const BudgetModal: React.FC<Props> = ({ visible, onClose, onSuccess, isEditing =
                 setDuration('');
                 setStartDate(new Date());
             }
-            else{
+            else {
                 await createBudget({ amount: parseFloat(amount), duration, startDate });
-            Alert.alert('Success', 'Budget set successfully');
-            onSuccess();
+                Alert.alert('Success', 'Budget set successfully');
+                onSuccess();
                 setAmount('');
                 setDuration('');
                 setStartDate(new Date());
             }
-            
+
         } catch (error) {
             console.error('Error setting budget:', error);
             Alert.alert('Something went wrong. Try again!');
@@ -63,6 +64,11 @@ const BudgetModal: React.FC<Props> = ({ visible, onClose, onSuccess, isEditing =
         <Modal visible={visible} animationType="slide" transparent>
             <View style={styles.overlay}>
                 <View style={styles.modal}>
+                    {budgetExpired && (
+                        <Text style={styles.header}>
+                            Budget period ended! Please update your budget.
+                        </Text>
+                    )}
                     <Text style={styles.header}>{isEditing ? 'Edit Budget' : 'Set Your Budget 💰'}</Text>
                     <Text style={styles.label}>Amount</Text>
                     <TextInput

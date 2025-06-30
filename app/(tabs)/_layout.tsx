@@ -41,9 +41,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="analysis"
         options={{
-          title: 'Explore',
+          title: 'Analysis',
           tabBarIcon: ({ color, focused }) => (
             <View style={{ alignItems: 'center' }}>
               <Ionicons name="paper-plane" size={24} color={color} />

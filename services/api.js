@@ -10,6 +10,7 @@ export const GET_PROFILE = "/auth/profile";
 export const ADD_EXPENSE = "/expense";
 export const GET_EXPENSE_BY_USER = "/expense/expenseByID";
 export const GET_TOTAL_EXPENSE = "/expense/totalExpense";
+export const DELETE_EXPENSE = "/expense/:id";
 
 export const CREATE_BUDGET = "/budget";
 export const GET_BUDGET_BY_USER = "/budget/budgetByID";
